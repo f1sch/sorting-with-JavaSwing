@@ -35,6 +35,7 @@ public class Main {
     private JPanel barContainer;
     private List<BarPanel> bars;
     private int number_of_bars = 66;
+    private boolean isSorting = false;
 
     public Main() {
         // Erstelle das Hauptfenster
@@ -64,12 +65,20 @@ public class Main {
         // Erstelle den Sortier-Button
         // TODO hier die verschiedenen Sortieralgorithmen einfuegen
         JButton sortButton = new JButton("Sortieren");
-        sortButton.addActionListener(e -> sortBars());
+        sortButton.addActionListener(e -> {
+            if (!isSorting) {
+                new Thread(this::animateSortBars).start();
+            }
+        });
         buttonPanel.add(sortButton);
 
         // Erstelle den Button zum Mischen
         JButton shuffleButton = new JButton("Mischen");
-        shuffleButton.addActionListener(e -> shuffleBars());
+        shuffleButton.addActionListener(e -> {
+            if (isSorting) {
+                shuffleBars();
+            }
+        });
         buttonPanel.add(shuffleButton);
 
         // Füge das Button-Panel zum Hauptfenster hinzu
@@ -78,18 +87,30 @@ public class Main {
         // Zeige das Fenster an
         frame.setVisible(true);
     }
-
-    private void sortBars() {
+    // Bubble Sort
+    private void animateSortBars() {
+        isSorting = true;
         // Sortiere die Balken nach ihrer Höhe
-        Collections.sort(bars, Comparator.comparingInt(BarPanel::getHeight));
-
-        // Aktualisiere die Anzeige
-        barContainer.removeAll();
-        for (BarPanel bar : bars) {
-            barContainer.add(bar);
+        for (int i = 0; i <bars.size() - 1; i++) {
+            for (int j = 0; j <bars.size() - i - 1; j++) {
+                if (bars.get(j).getBarHeight() > bars.get(j + 1).getBarHeight()) {
+                    Collections.swap(bars, j, j + 1);
+                    // Aktualisiere die Anzeige
+                    barContainer.removeAll();
+                    for (BarPanel bar : bars) {
+                        barContainer.add(bar);
+                    }
+                    barContainer.revalidate();
+                    barContainer.repaint();
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
-        barContainer.revalidate();
-        barContainer.repaint();
+        isSorting = false;
     }
 
     private void shuffleBars() {
