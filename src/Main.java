@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,12 +36,13 @@ public class Main {
     private JPanel barContainer;
     private List<BarPanel> bars;
     private int number_of_bars = 66;
+    private JComboBox<String> algorithmComboBox;
 
     private boolean isSorting = false;
     private boolean stopSorting = false;
     private long how_long_to_sleep = 150;
 
-    private JComboBox<String> algorithmComboBox;
+    private Thread sortingThread;
 
     public Main() {
         // Erstelle das Hauptfenster
@@ -77,8 +79,9 @@ public class Main {
         JButton sortButton = new JButton("Sortieren");
         sortButton.addActionListener(e -> {
             if (!isSorting) {
-                stopSorting = false;
-                new Thread(this::animateSortBars).start();
+                isSorting = true;
+                sortingThread = new Thread(this::animateSortBars);
+                sortingThread.start();
             }
         });
         buttonPanel.add(sortButton);
@@ -87,7 +90,8 @@ public class Main {
         JButton shuffleButton = new JButton("Mischen");
         shuffleButton.addActionListener(e -> {
             if (isSorting) {
-                stopSorting = true;
+                sortingThread.interrupt();
+                isSorting = false;
             }
             shuffleBars();
         });
@@ -103,35 +107,42 @@ public class Main {
     private void animateSortBars() {
         isSorting = true;
         String selectedAlgorithm = (String) algorithmComboBox.getSelectedItem();
-        switch (selectedAlgorithm) {
-            case "Bubble Sort":
-                bubbleSort();
-                break;
-            case "Selection Sort":
-                selectionSort();
-                break;
-            case "Insertion Sort":
-                insertionSort();
-                break;
-            case "Quick Sort":
-                quickSort(0, bars.size() - 1);
-                break;
-            case "Merge Sort":
-                mergeSort();
-                break;
-            case "Heap Sort":
-                heapSort();
-                break;
+        try {
+            switch (selectedAlgorithm) {
+                case "Bubble Sort":
+                    bubbleSort();
+                    break;
+                case "Selection Sort":
+                    selectionSort();
+                    break;
+                case "Insertion Sort":
+                    insertionSort();
+                    break;
+                case "Quick Sort":
+                    quickSort(0, bars.size() - 1);
+                    break;
+                case "Merge Sort":
+                    mergeSort();
+                    break;
+                case "Heap Sort":
+                    heapSort();
+                    break;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
         isSorting = false;
     }
+
     /* Quadratic Sorting */
 
     // O(n²)
-    private void bubbleSort() {
+    private void bubbleSort() throws InterruptedException {
         for (int i = 0; i < bars.size() - 1; i++) {
             for (int j = 0; j <bars.size() - 1 - i; j++) {
-                if (stopSorting) return;
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new InterruptedException();
+                }
                 if (bars.get(j).getBarHeight() > bars.get(j + 1).getBarHeight()) {
                     Collections.swap(bars, j, j + 1);
                     updateBars();
@@ -140,11 +151,13 @@ public class Main {
         }
     }
     // O(n²)
-    private void selectionSort() {
+    private void selectionSort() throws InterruptedException {
         int maxIndex = bars.size();
         int insertIndex = 0;
         while (insertIndex < maxIndex) {
-            if (stopSorting) return;
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
             int minPosition = insertIndex;
             for (int i = insertIndex + 1; i < maxIndex; i++) {
                 if (bars.get(i).getBarHeight() < bars.get(minPosition).getBarHeight()) {
@@ -157,10 +170,12 @@ public class Main {
         }
     }
     // Average: O(n²)
-    private void insertionSort() {
+    private void insertionSort() throws InterruptedException {
         int i = 1;
         while (i < bars.size()) {
-            if (stopSorting) return;
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
             int j = i;
             while (j > 0 && bars.get(j).getBarHeight() < bars.get(j - 1).getBarHeight()) {
                 Collections.swap(bars, j, j - 1);
@@ -174,22 +189,26 @@ public class Main {
     /* Logarithmic Sorting */
 
     // Average: O(n * log(n))
-    private void quickSort(int left, int right) {
-        if (left < right && !stopSorting) {
+    private void quickSort(int left, int right) throws InterruptedException {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new InterruptedException();
+        }
+        if (left < right) {
             int divider = quickSortPartition(left, right);
             quickSort(left, divider - 1);
             quickSort(divider + 1, right);
         }
     }
-    private int quickSortPartition(int left, int right) { // Hilfsfunktion für quickSort()
+    private int quickSortPartition(int left, int right) throws InterruptedException { // Hilfsfunktion für quickSort()
         // daten[] = bars
         // Starte mit j links vom Pivotelement
         int i = left, j = right - 1;
         int pivot = bars.get(right).getBarHeight();
 
         while (i < j) { // Solange i an j nicht vorbeigelaufen ist
-            if (stopSorting) return -1;
-
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
             // Suche von links ein Element, welches größer als Pivotelement ist
             while (i < j && bars.get(i).getBarHeight() <= pivot) {
                 i++;
@@ -215,22 +234,24 @@ public class Main {
         return i;
     }
 
-    private void mergeSort() {}
+    private void mergeSort() throws InterruptedException {}
 
-    private void heapSort() {}
+    private void heapSort() throws InterruptedException {}
 
-    private void updateBars() {
-        barContainer.removeAll();
-        for (BarPanel bar : bars) {
-            barContainer.add(bar);
-        }
-        barContainer.revalidate();
-        barContainer.repaint();
+    private void updateBars() throws InterruptedException {
         try {
-            Thread.sleep(how_long_to_sleep);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            SwingUtilities.invokeAndWait(() -> {
+                barContainer.removeAll();
+                for (BarPanel bar : bars) {
+                    barContainer.add(bar);
+                }
+                barContainer.revalidate();
+                barContainer.repaint();
+            });
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
         }
+        Thread.sleep(how_long_to_sleep);
     }
 
     private void shuffleBars() {
