@@ -68,7 +68,8 @@ public class Main {
         JPanel buttonPanel = new JPanel();
 
         // Erstelle die Dropdown-Liste für Sortieralgorithmen
-        String[] algorithms = { "Bubble Sort", "Selection Sort", "Insertion Sort" };
+        String[] algorithms = { "Bubble Sort", "Selection Sort", "Insertion Sort",
+                "Quick Sort", "Merge Sort", "Heap Sort" };
         algorithmComboBox = new JComboBox<>(algorithms);
         buttonPanel.add(algorithmComboBox);
 
@@ -112,10 +113,21 @@ public class Main {
             case "Insertion Sort":
                 insertionSort();
                 break;
+            case "Quick Sort":
+                quickSort(0, bars.size() - 1);
+                break;
+            case "Merge Sort":
+                mergeSort();
+                break;
+            case "Heap Sort":
+                heapSort();
+                break;
         }
         isSorting = false;
     }
+    /* Quadratic Sorting */
 
+    // O(n²)
     private void bubbleSort() {
         for (int i = 0; i < bars.size() - 1; i++) {
             for (int j = 0; j <bars.size() - 1 - i; j++) {
@@ -127,7 +139,7 @@ public class Main {
             }
         }
     }
-
+    // O(n²)
     private void selectionSort() {
         int maxIndex = bars.size();
         int insertIndex = 0;
@@ -144,7 +156,7 @@ public class Main {
             updateBars();
         }
     }
-
+    // Average: O(n²)
     private void insertionSort() {
         int i = 1;
         while (i < bars.size()) {
@@ -158,6 +170,54 @@ public class Main {
             updateBars();
         }
     }
+
+    /* Logarithmic Sorting */
+
+    // Average: O(n * log(n))
+    private void quickSort(int left, int right) {
+        if (left < right && !stopSorting) {
+            int divider = quickSortPartition(left, right);
+            quickSort(left, divider - 1);
+            quickSort(divider + 1, right);
+        }
+    }
+    private int quickSortPartition(int left, int right) { // Hilfsfunktion für quickSort()
+        // daten[] = bars
+        // Starte mit j links vom Pivotelement
+        int i = left, j = right - 1;
+        int pivot = bars.get(right).getBarHeight();
+
+        while (i < j) { // Solange i an j nicht vorbeigelaufen ist
+            if (stopSorting) return -1;
+
+            // Suche von links ein Element, welches größer als Pivotelement ist
+            while (i < j && bars.get(i).getBarHeight() <= pivot) {
+                i++;
+            }
+
+            // Suche von rechts ein Element, welches kleiner oder gleich dem Pivotelement ist
+            while (j > i && bars.get(j).getBarHeight() > pivot) {
+                j--;
+            }
+            if (bars.get(i).getBarHeight() > bars.get(j).getBarHeight()) {
+                Collections.swap(bars, i, j);
+                updateBars();
+            }
+        }
+        // Tausche Pivotelement (daten[rechts]) mit neuer endgültiger Position (daten[i])
+        // und gib die neue Position des Pivotelements zurück, beende Durchlauf
+        if (bars.get(i).getBarHeight() > pivot) {
+            Collections.swap(bars, i, right);
+            updateBars();
+        } else {
+            i = right;
+        }
+        return i;
+    }
+
+    private void mergeSort() {}
+
+    private void heapSort() {}
 
     private void updateBars() {
         barContainer.removeAll();
