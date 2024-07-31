@@ -1,67 +1,69 @@
 import javax.swing.*;
 import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.*;
 import java.util.List;
 
 class BarPanel extends JPanel {
-    private int height_bars;
-    private int width_bars = 10;
+    private int height;
+    private final int width_bars = 10;
 
     public BarPanel(int height) {
-        this.height_bars = height;
+        this.height = height;
         setPreferredSize(new Dimension(width_bars, height));
     }
 
     public int getBarHeight() {
-        return height_bars;
+        return height;
     }
 
-    public int getBarWidth() {
-        return width_bars;
+    public void setBarHeight(int height) {
+        this.height = height;
+        setPreferredSize(new Dimension(width_bars, height));
+        revalidate();
+        repaint();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.setColor(Color.BLUE);
-        g.fillRect(0, getHeight() - height_bars, getWidth(), height_bars);
+        g.fillRect(0, getHeight() - height, getWidth(), height);
     }
 }
 
 public class Main {
-    private JFrame frame;
-    private JPanel barContainer;
-    private List<BarPanel> bars;
-    private int number_of_bars = 66;
-    private JComboBox<String> algorithmComboBox;
+    private final JPanel barContainer;
+    private final List<BarPanel> bars;
+    private final int number_of_bars = 55;
+    private final JComboBox<String> algorithmComboBox;
 
     private boolean isSorting = false;
-    private boolean stopSorting = false;
-    private long how_long_to_sleep = 150;
+    private final long how_long_to_sleep = 150;
 
     private Thread sortingThread;
 
     public Main() {
         // Erstelle das Hauptfenster
-        frame = new JFrame("Sorting Algorithms");
+        JFrame frame = new JFrame("Sorting Algorithms");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
         frame.setLayout(new BorderLayout());
+        frame.setResizable(false);
 
         // Erstelle das Panel zur Anzeige der Balken
         barContainer = new JPanel();
-        barContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 2, 0));
+        barContainer.setLayout(new BoxLayout(barContainer, BoxLayout.X_AXIS));
+        barContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Erstelle die Balken
         bars = new ArrayList<>();
-        for (int i = 0; i < number_of_bars; i++) { // TODO number_of_bars an Breite des Fensters anpassen
+        for (int i = 0; i < number_of_bars; i++) {
             int height = (int) (Math.random() * 400) + 50;
             BarPanel bar = new BarPanel(height);
             bars.add(bar);
             barContainer.add(bar);
+            barContainer.add(Box.createRigidArea(new Dimension(3, 0)));
         }
         // Füge das Balken-Panel zum Hauptfenster hinzu
         frame.add(new JScrollPane(barContainer), BorderLayout.CENTER);
@@ -105,7 +107,7 @@ public class Main {
     }
     // Bubble Sort
     private void animateSortBars() {
-        isSorting = true;
+        //isSorting = true;
         String selectedAlgorithm = (String) algorithmComboBox.getSelectedItem();
         try {
             switch (selectedAlgorithm) {
@@ -122,11 +124,15 @@ public class Main {
                     quickSort(0, bars.size() - 1);
                     break;
                 case "Merge Sort":
-                    mergeSort();
+                    mergeSort(0, bars.size() - 1);
                     break;
                 case "Heap Sort":
                     heapSort();
                     break;
+                case null:
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected value: " + selectedAlgorithm);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -233,10 +239,73 @@ public class Main {
         }
         return i;
     }
+    // O(n * log(n))
+    private void mergeSort(int left, int right) throws InterruptedException {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new InterruptedException();
+        }
+        if (left < right) {
+            int middle = (left + right) / 2;
+            mergeSort(left, middle);
+            mergeSort(middle + 1, right);
+            merge(left, middle, right);
+        }
+    }
+    private void merge(int left, int middle, int right) throws InterruptedException {
+        int n1 = middle - left + 1;
+        int n2 = right - middle;
 
-    private void mergeSort() throws InterruptedException {}
+        List<Integer> leftHeights = new ArrayList<>(n1);
+        List<Integer> rightHeights = new ArrayList<>(n2);
 
-    private void heapSort() throws InterruptedException {}
+        for (int i = 0; i < n1; i++) {
+            leftHeights.add(bars.get(left + i).getBarHeight());
+        }
+        for (int j = 0; j < n2; j++) {
+            rightHeights.add(bars.get(middle + 1 + j).getBarHeight());
+        }
+
+        int i = 0, j = 0;
+        int k = left;
+
+        while (i < n1 && j < n2) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
+            if (leftHeights.get(i) <= rightHeights.get(j)) {
+                bars.get(k).setBarHeight(leftHeights.get(i));
+                i++;
+            } else {
+                bars.get(k).setBarHeight(rightHeights.get(j));
+                j++;
+            }
+            k++;
+            updateBars();
+        }
+
+        while (i < n1) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
+            bars.get(k).setBarHeight(leftHeights.get(i));
+            i++; k++;
+            updateBars();
+        }
+
+        while (j < n2) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
+            bars.get(k).setBarHeight(rightHeights.get(j));
+            j++; k++;
+            updateBars();
+        }
+    }
+
+
+    private void heapSort() throws InterruptedException {
+
+    }
 
     private void updateBars() throws InterruptedException {
         try {
@@ -244,6 +313,7 @@ public class Main {
                 barContainer.removeAll();
                 for (BarPanel bar : bars) {
                     barContainer.add(bar);
+                    barContainer.add(Box.createRigidArea(new Dimension(3, 0)));
                 }
                 barContainer.revalidate();
                 barContainer.repaint();
@@ -262,6 +332,7 @@ public class Main {
         barContainer.removeAll();
         for (BarPanel bar : bars) {
             barContainer.add(bar);
+            barContainer.add(Box.createRigidArea(new Dimension(3, 0)));
         }
         barContainer.revalidate();
         barContainer.repaint();
