@@ -35,9 +35,12 @@ public class Main {
     private JPanel barContainer;
     private List<BarPanel> bars;
     private int number_of_bars = 66;
+
     private boolean isSorting = false;
-    private JComboBox<String> algorithmComboBox;
+    private boolean stopSorting = false;
     private long how_long_to_sleep = 150;
+
+    private JComboBox<String> algorithmComboBox;
 
     public Main() {
         // Erstelle das Hauptfenster
@@ -70,10 +73,10 @@ public class Main {
         buttonPanel.add(algorithmComboBox);
 
         // Erstelle den Sortier-Button
-        // TODO hier die verschiedenen Sortieralgorithmen einfuegen
         JButton sortButton = new JButton("Sortieren");
         sortButton.addActionListener(e -> {
             if (!isSorting) {
+                stopSorting = false;
                 new Thread(this::animateSortBars).start();
             }
         });
@@ -83,8 +86,9 @@ public class Main {
         JButton shuffleButton = new JButton("Mischen");
         shuffleButton.addActionListener(e -> {
             if (isSorting) {
-                shuffleBars();
+                stopSorting = true;
             }
+            shuffleBars();
         });
         buttonPanel.add(shuffleButton);
 
@@ -115,6 +119,7 @@ public class Main {
     private void bubbleSort() {
         for (int i = 0; i < bars.size() - 1; i++) {
             for (int j = 0; j <bars.size() - 1 - i; j++) {
+                if (stopSorting) return;
                 if (bars.get(j).getBarHeight() > bars.get(j + 1).getBarHeight()) {
                     Collections.swap(bars, j, j + 1);
                     updateBars();
@@ -127,6 +132,7 @@ public class Main {
         int maxIndex = bars.size();
         int insertIndex = 0;
         while (insertIndex < maxIndex) {
+            if (stopSorting) return;
             int minPosition = insertIndex;
             for (int i = insertIndex + 1; i < maxIndex; i++) {
                 if (bars.get(i).getBarHeight() < bars.get(minPosition).getBarHeight()) {
@@ -142,6 +148,7 @@ public class Main {
     private void insertionSort() {
         int i = 1;
         while (i < bars.size()) {
+            if (stopSorting) return;
             int j = i;
             while (j > 0 && bars.get(j).getBarHeight() < bars.get(j - 1).getBarHeight()) {
                 Collections.swap(bars, j, j - 1);
