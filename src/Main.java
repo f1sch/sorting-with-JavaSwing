@@ -36,6 +36,8 @@ public class Main {
     private List<BarPanel> bars;
     private int number_of_bars = 66;
     private boolean isSorting = false;
+    private JComboBox<String> algorithmComboBox;
+    private long how_long_to_sleep = 150;
 
     public Main() {
         // Erstelle das Hauptfenster
@@ -61,6 +63,11 @@ public class Main {
 
         // Erstelle ein Panel für die Buttons
         JPanel buttonPanel = new JPanel();
+
+        // Erstelle die Dropdown-Liste für Sortieralgorithmen
+        String[] algorithms = { "Bubble Sort", "Selection Sort", "Insertion Sort" };
+        algorithmComboBox = new JComboBox<>(algorithms);
+        buttonPanel.add(algorithmComboBox);
 
         // Erstelle den Sortier-Button
         // TODO hier die verschiedenen Sortieralgorithmen einfuegen
@@ -90,27 +97,73 @@ public class Main {
     // Bubble Sort
     private void animateSortBars() {
         isSorting = true;
-        // Sortiere die Balken nach ihrer Höhe
-        for (int i = 0; i <bars.size() - 1; i++) {
-            for (int j = 0; j <bars.size() - i - 1; j++) {
+        String selectedAlgorithm = (String) algorithmComboBox.getSelectedItem();
+        switch (selectedAlgorithm) {
+            case "Bubble Sort":
+                bubbleSort();
+                break;
+            case "Selection Sort":
+                selectionSort();
+                break;
+            case "Insertion Sort":
+                insertionSort();
+                break;
+        }
+        isSorting = false;
+    }
+
+    private void bubbleSort() {
+        for (int i = 0; i < bars.size() - 1; i++) {
+            for (int j = 0; j <bars.size() - 1 - i; j++) {
                 if (bars.get(j).getBarHeight() > bars.get(j + 1).getBarHeight()) {
                     Collections.swap(bars, j, j + 1);
-                    // Aktualisiere die Anzeige
-                    barContainer.removeAll();
-                    for (BarPanel bar : bars) {
-                        barContainer.add(bar);
-                    }
-                    barContainer.revalidate();
-                    barContainer.repaint();
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    updateBars();
                 }
             }
         }
-        isSorting = false;
+    }
+
+    private void selectionSort() {
+        int maxIndex = bars.size();
+        int insertIndex = 0;
+        while (insertIndex < maxIndex) {
+            int minPosition = insertIndex;
+            for (int i = insertIndex + 1; i < maxIndex; i++) {
+                if (bars.get(i).getBarHeight() < bars.get(minPosition).getBarHeight()) {
+                    minPosition = i;
+                }
+            }
+            Collections.swap(bars, minPosition, insertIndex);
+            insertIndex++;
+            updateBars();
+        }
+    }
+
+    private void insertionSort() {
+        int i = 1;
+        while (i < bars.size()) {
+            int j = i;
+            while (j > 0 && bars.get(j).getBarHeight() < bars.get(j - 1).getBarHeight()) {
+                Collections.swap(bars, j, j - 1);
+                j--;
+            }
+            i++;
+            updateBars();
+        }
+    }
+
+    private void updateBars() {
+        barContainer.removeAll();
+        for (BarPanel bar : bars) {
+            barContainer.add(bar);
+        }
+        barContainer.revalidate();
+        barContainer.repaint();
+        try {
+            Thread.sleep(how_long_to_sleep);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void shuffleBars() {
