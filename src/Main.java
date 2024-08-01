@@ -45,7 +45,7 @@ public class Main {
 
     public Main() {
         // Erstelle das Hauptfenster
-        JFrame frame = new JFrame("Sorting Algorithms");
+        JFrame frame = new JFrame("Sortieralgorithmen");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
         frame.setLayout(new BorderLayout());
@@ -72,12 +72,12 @@ public class Main {
         JPanel buttonPanel = new JPanel();
 
         // Erstelle die Dropdown-Liste für Sortieralgorithmen
-        String[] algorithms = { "Bubble Sort", "Selection Sort", "Insertion Sort",
-                "Quick Sort", "Merge Sort", "Heap Sort" };
+        String[] algorithms = { "Bubblesort", "Selectionsort", "Insertionsort",
+                "Quicksort", "Mergesort", "Heapsort" };
         algorithmComboBox = new JComboBox<>(algorithms);
         buttonPanel.add(algorithmComboBox);
 
-        // Erstelle den Sortier-Button
+        // Erstelle den Sortieren-Button
         JButton sortButton = new JButton("Sortieren");
         sortButton.addActionListener(e -> {
             if (!isSorting) {
@@ -105,28 +105,27 @@ public class Main {
         // Zeige das Fenster an
         frame.setVisible(true);
     }
-    // Bubble Sort
+    // Bubblesort
     private void animateSortBars() {
-        //isSorting = true;
         String selectedAlgorithm = (String) algorithmComboBox.getSelectedItem();
         try {
             switch (selectedAlgorithm) {
-                case "Bubble Sort":
+                case "Bubblesort":
                     bubbleSort();
                     break;
-                case "Selection Sort":
+                case "Selectionsort":
                     selectionSort();
                     break;
-                case "Insertion Sort":
+                case "Insertionsort":
                     insertionSort();
                     break;
-                case "Quick Sort":
+                case "Quicksort":
                     quickSort(0, bars.size() - 1);
                     break;
-                case "Merge Sort":
+                case "Mergesort":
                     mergeSort(0, bars.size() - 1);
                     break;
-                case "Heap Sort":
+                case "Heapsort":
                     heapSort();
                     break;
                 case null:
@@ -140,7 +139,7 @@ public class Main {
         isSorting = false;
     }
 
-    /* Quadratic Sorting */
+    /* Quadratisches Sortieren */
 
     // O(n²)
     private void bubbleSort() throws InterruptedException {
@@ -175,7 +174,7 @@ public class Main {
             updateBars();
         }
     }
-    // Average: O(n²)
+    // Durchschnitt: O(n²)
     private void insertionSort() throws InterruptedException {
         int i = 1;
         while (i < bars.size()) {
@@ -192,9 +191,9 @@ public class Main {
         }
     }
 
-    /* Logarithmic Sorting */
+    /* Logarithmisches Sortieren */
 
-    // Average: O(n * log(n))
+    // Durchschnitt: O(n * log(n))
     private void quickSort(int left, int right) throws InterruptedException {
         if (Thread.currentThread().isInterrupted()) {
             throw new InterruptedException();
@@ -302,9 +301,40 @@ public class Main {
         }
     }
 
-
+    // O(n * log n)
     private void heapSort() throws InterruptedException {
+        int n = bars.size();
 
+        for (int i = n / 2 - 1; i >= 0; i--) {
+            heapify(n, i);
+        }
+
+        for (int i = n - 1; i > 0; i--) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
+            Collections.swap(bars, 0, i);
+            updateBars();
+            heapify(i, 0);
+        }
+    }
+    private void heapify(int n, int i) throws InterruptedException {
+        int largest = i;
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+
+        if (left < n && bars.get(left).getBarHeight() > bars.get(largest).getBarHeight()) {
+            largest = left;
+        }
+        if (right < n && bars.get(right).getBarHeight() > bars.get(largest).getBarHeight()) {
+            largest = right;
+        }
+
+        if (largest != i) {
+            Collections.swap(bars, largest, i);
+            updateBars();
+            heapify(n, largest);
+        }
     }
 
     private void updateBars() throws InterruptedException {
